@@ -29,15 +29,19 @@ void UdfReader::parse(std::istream & is)
   this->_parsePrimaryVolumeDescriptor(is);
   this->_parsePartitionDescriptor(is);
   this->_parseLogicalVolumeDescriptor(is);
+  this->_parseFileSetDescriptor(is);
+  this->_parseRootDirectoryFileEntry(is);
+  this->_parseRootDirectoryFileIdentifierDescriptor(is);
 }
 
-bool UdfReader::_parseDescriptor(std::istream & is, char *desc, long unsigned int size, Uint16 tagIdentifier, uint32_t offset)
+// TODO: refactor
+bool UdfReader::_parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t tagIdentifier, uint32_t offset)
 {
   uint32_t loc;
   char *reserveDesc;
   tag *tagId;
 
-  loc = this->_avdp.MainVolumeDescriptorSequenceExtent.extLocation + offset;
+  loc = this->_avdp.mainVolDescSeqExt.extLocation + offset;
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(desc, size);
 
@@ -48,7 +52,7 @@ bool UdfReader::_parseDescriptor(std::istream & is, char *desc, long unsigned in
 
   // integrity check with reserve
   reserveDesc = new char [size];
-  loc = this->_avdp.ReserveVolumeDescriptorSequenceExtent.extLocation + offset;
+  loc = this->_avdp.reserveVolDescSeqExt.extLocation + offset;
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(reserveDesc, size);
 
@@ -77,25 +81,52 @@ void UdfReader::_parseAnchorVolumeDescriptorPointer(std::istream & is)
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read((char *)&this->_avdp, sizeof(this->_avdp));
 
-  if (this->_avdp.DescriptorTag.tagIdent != 2
-      || this->_avdp.DescriptorTag.tagLocation != loc)
+  if (this->_avdp.descTag.tagIdent != 2
+      || this->_avdp.descTag.tagLocation != loc)
     std::cerr << "Corrupted AnchorVolumeDescriptorPointer" << std::endl;
 }
 
 void UdfReader::_parsePrimaryVolumeDescriptor(std::istream & is)
 {
-  if (!this->_parseDescriptor(is, (char *)&this->_pvd, sizeof(this->_pvd), PVD_IDENTIFIER, 0))
+  if (!this->_parseDescriptor(is, (char *)&this->_pvd, sizeof(this->_pvd), TAG_IDENT_PVD, 0))
     std::cerr << "Corrupted PrimaryVolumeDescriptor" << std::endl;
 }
 
 void UdfReader::_parsePartitionDescriptor(std::istream & is)
 {
-  if (!this->_parseDescriptor(is, (char *)&this->_pd, sizeof(this->_pd), PD_IDENTIFIER, 2))
+  if (!this->_parseDescriptor(is, (char *)&this->_pd, sizeof(this->_pd), TAG_IDENT_PD, 2))
     std::cerr << "Corrupted PartitionDescriptor" << std::endl;
 }
 
 void UdfReader::_parseLogicalVolumeDescriptor(std::istream & is)
 {
-  if (!this->_parseDescriptor(is, (char *)&this->_lvd, sizeof(this->_lvd), LVD_IDENTIFIER, 1))
+  if (!this->_parseDescriptor(is, (char *)&this->_lvd, sizeof(this->_lvd), TAG_IDENT_LVD, 1))
     std::cerr << "Corrupted LogicalVolumeDescriptor" << std::endl;
+}
+
+void UdfReader::_parseFileSetDescriptor(std::istream & is)
+{
+  long_ad * fsd_addr;
+  uint32_t loc;
+
+  fsd_addr = (long_ad *)&this->_lvd.logicalVolContentsUse;
+  loc = this->_pd.partitionStartingLocation + fsd_addr->extLocation.logicalBlockNum;
+  is.seekg(loc * SECTOR_SIZE, is.beg);
+  is.read((char *)&this->_fsd, sizeof(this->_fsd));
+
+  if (this->_fsd.descTag.tagIdent != TAG_IDENT_FSD
+      || this->_fsd.descTag.tagLocation != fsd_addr->extLocation.logicalBlockNum)
+    std::cerr << "Corrupted FileSetDescriptor" << std::endl;
+}
+
+void UdfReader::_parseRootDirectoryFileEntry(std::istream & is)
+{
+  if (this->_parseDescriptor(is, (char *)&this->_rdfe, sizeof(this->_rdfe), TAG_IDENT_FE, this->_fsd.rootDirectoryICB.extLocation.logicalBlockNum))
+    std::cerr << "Corrupted FileEntry" << std::endl;
+}
+
+void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(std::istream & is)
+{
+  if (this->_parseDescriptor(is, (char *)&this->_rdfid, sizeof(this->_rdfid), TAG_IDENT_FID, this->_rdfe.descTag.tagLocation + 1))
+    std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
 }

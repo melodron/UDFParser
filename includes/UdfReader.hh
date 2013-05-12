@@ -3,18 +3,16 @@
 
 #include "AUdf.hh"
 
-# define PVD_IDENTIFIER ((Uint16)1)
-# define PD_IDENTIFIER ((Uint16)5)
-# define LVD_IDENTIFIER ((Uint16)6)
-
 class UdfReader : public AUdf
 {
-  AnchorVolumeDescriptorPointer _avdp;
-  PrimaryVolumeDescriptor _pvd;
-  ImpUseVolumeDescriptor _iuvd;
-  PartitionDescriptor _pd;
-  LogicalVolumeIntegrityDesc _lvid;
-  LogicalVolumeDescriptor _lvd;
+  anchorVolDescPtr _avdp;
+  primaryVolDesc _pvd;
+  partitionDesc _pd;
+  logicalVolDesc _lvd;
+  fileSetDesc _fsd;
+  fileEntry _rdfe;
+  fileIdentDesc _rdfid;
+  
 
 public:
   UdfReader(std::istream & is);
@@ -25,14 +23,18 @@ public:
   UdfReader & operator=(UdfReader const & udf);
 
   void parse(std::istream & is);
+  void toto(std::istream & is);
 
 private:
-  bool _parseDescriptor(std::istream & is, char *desc, long unsigned int size, Uint16 tagIdentifier, uint32_t offset);
+  bool _parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t  tagIdentifier, uint32_t offset);
 
   void _parseAnchorVolumeDescriptorPointer(std::istream & is);
   void _parsePrimaryVolumeDescriptor(std::istream & is);
   void _parsePartitionDescriptor(std::istream & is);
   void _parseLogicalVolumeDescriptor(std::istream & is);
+  void _parseFileSetDescriptor(std::istream & is);
+  void _parseRootDirectoryFileEntry(std::istream & is);
+  void _parseRootDirectoryFileIdentifierDescriptor(std::istream & is);
 };
 
 #endif /* !__UDFREADER_H__ */

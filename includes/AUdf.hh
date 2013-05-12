@@ -2,8 +2,12 @@
 # define __AUDF_H__
 
 #include <istream>
+#include <stdint.h>
 
-#include "UDF.h"
+#include "ecma_167.h"
+
+# define SECTOR_SIZE (2048)
+# define MAX_SECTOR (32)
 
 class AUdf
 {

@@ -5,7 +5,7 @@
 bool AUdf::detect(std::istream & is)
 {
   uint32_t sector;
-  EntityID vrs;
+  regid vrs;
   char * buffer = new char [SECTOR_SIZE];
   bool validUdf = false;
   bool validDesc = true;
@@ -16,12 +16,12 @@ bool AUdf::detect(std::istream & is)
 
     memcpy(&vrs, buffer, sizeof(vrs));
 
-    if (memcmp(&vrs.Identifier, "BEA01", 5) == 0)
+    if (memcmp(&vrs.ident, VSD_STD_ID_BEA01, VSD_STD_ID_LEN) == 0)
       continue;
-    else if (memcmp(&vrs.Identifier, "TEA01", 5) == 0)
+    else if (memcmp(&vrs.ident, VSD_STD_ID_TEA01, VSD_STD_ID_LEN) == 0)
       break;
-    else if (memcmp(&vrs.Identifier, "NSR02", 5) == 0
-	     || memcmp(&vrs.Identifier, "NSR03", 5) == 0)
+    else if (memcmp(&vrs.ident, VSD_STD_ID_NSR02, VSD_STD_ID_LEN) == 0
+	     || memcmp(&vrs.ident, VSD_STD_ID_NSR03, VSD_STD_ID_LEN) == 0)
       validUdf = true;
     else {
       validDesc = false;
