@@ -29,33 +29,32 @@ void UdfReader::parse(std::istream & is)
   this->_parsePrimaryVolumeDescriptor(is);
   this->_parsePartitionDescriptor(is);
   this->_parseLogicalVolumeDescriptor(is);
-  this->_parseLogicalVolumeIntegrityDesc(is);
 }
 
 bool UdfReader::_parseDescriptor(std::istream & is, char *desc, long unsigned int size, Uint16 tagIdentifier, uint32_t offset)
 {
   uint32_t loc;
   char *reserveDesc;
-  struct tag *tagId;
+  tag *tagId;
 
-  // Anchor volume descriptor always at sector 256
-  loc = this->_avdp.MainVolumeDescriptorSequenceExtent.loc + offset;
+  loc = this->_avdp.MainVolumeDescriptorSequenceExtent.extLocation + offset;
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(desc, size);
 
-  tagId = (struct tag *)desc;
-  if (tagId->TagIdentifier != tagIdentifier
-      || tagId->TagLocation != loc)
+  tagId = (tag *)desc;
+  if (tagId->tagIdent != tagIdentifier
+      || tagId->tagLocation != loc)
     return false;
 
+  // integrity check with reserve
   reserveDesc = new char [size];
-  loc = this->_avdp.ReserveVolumeDescriptorSequenceExtent.loc + offset;
+  loc = this->_avdp.ReserveVolumeDescriptorSequenceExtent.extLocation + offset;
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(reserveDesc, size);
 
-  tagId = (struct tag *)reserveDesc;
-  if (tagId->TagIdentifier != tagIdentifier
-      || tagId->TagLocation != loc) {
+  tagId = (tag *)reserveDesc;
+  if (tagId->tagIdent != tagIdentifier
+      || tagId->tagLocation != loc) {
     delete [] reserveDesc;
     return false;
   }
@@ -78,8 +77,8 @@ void UdfReader::_parseAnchorVolumeDescriptorPointer(std::istream & is)
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read((char *)&this->_avdp, sizeof(this->_avdp));
 
-  if (this->_avdp.DescriptorTag.TagIdentifier != 2
-      || this->_avdp.DescriptorTag.TagLocation != loc)
+  if (this->_avdp.DescriptorTag.tagIdent != 2
+      || this->_avdp.DescriptorTag.tagLocation != loc)
     std::cerr << "Corrupted AnchorVolumeDescriptorPointer" << std::endl;
 }
 
@@ -99,9 +98,4 @@ void UdfReader::_parseLogicalVolumeDescriptor(std::istream & is)
 {
   if (!this->_parseDescriptor(is, (char *)&this->_lvd, sizeof(this->_lvd), LVD_IDENTIFIER, 1))
     std::cerr << "Corrupted LogicalVolumeDescriptor" << std::endl;
-}
-
-void UdfReader::_parseLogicalVolumeIntegrityDesc(std::istream & is)
-{
-
 }

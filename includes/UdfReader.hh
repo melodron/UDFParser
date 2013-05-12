@@ -33,7 +33,6 @@ private:
   void _parsePrimaryVolumeDescriptor(std::istream & is);
   void _parsePartitionDescriptor(std::istream & is);
   void _parseLogicalVolumeDescriptor(std::istream & is);
-  void _parseLogicalVolumeIntegrityDesc(std::istream & is);
 };
 
 #endif /* !__UDFREADER_H__ */
