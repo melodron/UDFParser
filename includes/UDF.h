@@ -10,13 +10,13 @@ typedef uint16_t 		Uint16;
 typedef uint32_t 		Uint32;
 typedef uint64_t 		Uint64;
 typedef int16_t 		Int16;
-typedef unsigned char		byte;
+typedef char			byte;
 typedef uint8_t			dstring; // compilation patch => to be replaced asap
 
 struct extent_ad
 {
-	uint32_t 	len;
-	uint32_t 	loc;
+	Uint32 	len;
+	Uint32 	loc;
 };
 
 struct charspec 
@@ -67,7 +67,7 @@ struct tag
 	Uint32 TagLocation;
 };
 
-struct PrimaryVolumeDescriptor 
+struct PrimaryVolumeDescriptor
 { /* ECMA 167 3/10.1 */
 	struct tag DescriptorTag;
 	Uint32 VolumeDescriptorSequenceNumber;
