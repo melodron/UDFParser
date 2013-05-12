@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "UdfReader.hh"
+#include "Command.hpp"
 
 int main(int ac, char const * av[])
 {
@@ -22,6 +23,8 @@ int main(int ac, char const * av[])
   }
 
   is.close();
+/*  Command test;
 
+  test.exec();*/
   return 0;
 }
