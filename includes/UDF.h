@@ -2,12 +2,15 @@
 
 #include <stdint.h>
 
+# define SECTOR_SIZE (2048)
+# define MAX_SECTOR (32)
+
 typedef uint8_t 		Uint8;
 typedef uint16_t 		Uint16;
 typedef uint32_t 		Uint32;
 typedef uint64_t 		Uint64;
 typedef int16_t 		Int16;
-typedef unsigned char 	byte;
+typedef unsigned char		byte;
 typedef uint8_t			dstring; // compilation patch => to be replaced asap
 
 struct extent_ad

@@ -1,7 +1,27 @@
-#include "UDF.h"
+#include <iostream>
+#include <fstream>
 
-int main()
+#include "UdfReader.hh"
+
+int main(int ac, char const * av[])
 {
-	
-	return 0;
+  std::ifstream is;
+  UdfReader *udf;
+
+  if (ac < 2)
+    return 0;
+
+  is.open(av[1], std::ifstream::binary);
+
+  if (AUdf::detect(is)) {
+    udf = new UdfReader(is);
+    std::cout << "is UDF"  << std::endl;
+    delete udf;
+  } else {
+    std::cout << "is not UDF :(" << std::endl;
+  }
+
+  is.close();
+
+  return 0;
 }

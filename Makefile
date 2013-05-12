@@ -1,5 +1,7 @@
 NAME = UDF_Reader
-SRCS = srcs/main.cpp
+SRCS = srcs/main.cpp \
+       srcs/UdfReader.cpp \
+       srcs/AUdf.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
