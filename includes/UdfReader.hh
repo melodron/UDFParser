@@ -2,6 +2,7 @@
 # define __UDFREADER_H__
 
 #include "AUdf.hh"
+#include "FDiskData.h"
 
 class UdfReader : public AUdf
 {
@@ -24,6 +25,7 @@ public:
 
   void parse(std::istream & is);
   void toto(std::istream & is);
+  void getFDiskData(FDiskData &data);
 
 private:
   bool _parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t  tagIdentifier, uint32_t offset);

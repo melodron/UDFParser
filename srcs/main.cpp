@@ -3,6 +3,7 @@
 
 #include "UdfReader.hh"
 #include "Command.hpp"
+#include "FDiskData.h"
 
 int main(int ac, char const * av[])
 {
@@ -15,8 +16,11 @@ int main(int ac, char const * av[])
   is.open(av[1], std::ifstream::binary);
 
   if (AUdf::detect(is)) {
+    FDiskData data;
+
     udf = new UdfReader(is);
     std::cout << "is UDF"  << std::endl;
+    udf->getFDiskData(data);
     delete udf;
   } else {
     std::cout << "is not UDF :(" << std::endl;

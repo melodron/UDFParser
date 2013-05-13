@@ -130,3 +130,38 @@ void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(std::istream & is)
   if (this->_parseDescriptor(is, (char *)&this->_rdfid, sizeof(this->_rdfid), TAG_IDENT_FID, this->_rdfe.descTag.tagLocation + 1))
     std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
 }
+
+#include <iostream>
+#include <iomanip>
+/*
+** fill the structure in parameter with disk info
+*/
+void  UdfReader::getFDiskData(FDiskData &data)
+{
+  //timezone
+  data.recordingDateAndTime = &_pvd.recordingDateAndTime;
+
+  struct
+  {
+    unsigned type:4;
+    unsigned timezone:12;
+  } typeAndTimezone;
+
+  typeAndTimezone.type = data.recordingDateAndTime->typeAndTimezone >> 12;
+  typeAndTimezone.timezone = data.recordingDateAndTime->typeAndTimezone & 0b111111111;
+  std::cout << "Record Time:"
+            << data.recordingDateAndTime->year << "-"
+            << (int)data.recordingDateAndTime->month << "-"
+            << (int)data.recordingDateAndTime->day << "\t"
+            << (int)data.recordingDateAndTime->hour << ":"
+            << (int)data.recordingDateAndTime->minute << ":"
+            << std::setw(2) << std::setfill('0') << (int)data.recordingDateAndTime->second;
+  if (typeAndTimezone.timezone >= -1440 && typeAndTimezone.timezone <= 1440)
+  {
+    std::cout << " (UTC: " 
+               << std::showpos << typeAndTimezone.timezone / 60 << ")";
+  }
+  std::cout << std::endl;
+
+  
+}
