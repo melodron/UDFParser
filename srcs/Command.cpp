@@ -62,5 +62,9 @@ void	Command::splitCommand(std::string const &input, std::vector<std::string> &t
 void	Command::help(std::vector<std::string> &/*command*/)
 {
 	std::cout << "help: command list" << std::endl
-			  << "cd: change directory" << std::endl;
+			  << "cd: change directory" << std::endl
+			  << "dir: show directory content" << std::endl
+			  << "fdisk: show disk information" << std::endl
+			  << "cp: copy files" << std::endl
+			  << "exit: quit program" << std::endl;
 }
