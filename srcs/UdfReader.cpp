@@ -30,7 +30,7 @@ void UdfReader::parse(std::istream & is)
   this->_parsePartitionDescriptor(is);
   this->_parseLogicalVolumeDescriptor(is);
   this->_parseFileSetDescriptor(is);
-  this->_parseRootDirectoryFileEntry(is);
+  this->_parseRootDirectoryExtendedFileEntry(is);
   this->_parseRootDirectoryFileIdentifierDescriptor(is);
 }
 
@@ -106,27 +106,41 @@ void UdfReader::_parseLogicalVolumeDescriptor(std::istream & is)
 
 void UdfReader::_parseFileSetDescriptor(std::istream & is)
 {
-  long_ad * fsd_addr;
   uint32_t loc;
+  long_ad *rootFileEntryICB;
 
-  fsd_addr = (long_ad *)&this->_lvd.logicalVolContentsUse;
-  loc = this->_pd.partitionStartingLocation + fsd_addr->extLocation.logicalBlockNum;
+  rootFileEntryICB = (long_ad *)&this->_lvd.logicalVolContentsUse;
+  loc = this->_pd.partitionStartingLocation + rootFileEntryICB->extLocation.logicalBlockNum;
   is.seekg(loc * SECTOR_SIZE, is.beg);
-  is.read((char *)&this->_fsd, sizeof(this->_fsd));
+  is.read(this->_buffer, SECTOR_SIZE);
+  this->_fsd = (fileSetDesc *)&this->_buffer[0];
 
-  if (this->_fsd.descTag.tagIdent != TAG_IDENT_FSD
-      || this->_fsd.descTag.tagLocation != fsd_addr->extLocation.logicalBlockNum)
+  if (this->_fsd->descTag.tagIdent != TAG_IDENT_FSD)
     std::cerr << "Corrupted FileSetDescriptor" << std::endl;
 }
 
-void UdfReader::_parseRootDirectoryFileEntry(std::istream & is)
+void UdfReader::_parseRootDirectoryExtendedFileEntry(std::istream & is)
 {
-  if (this->_parseDescriptor(is, (char *)&this->_rdfe, sizeof(this->_rdfe), TAG_IDENT_FE, this->_fsd.rootDirectoryICB.extLocation.logicalBlockNum))
-    std::cerr << "Corrupted FileEntry" << std::endl;
+  uint32_t loc;
+
+  loc = this->_pd.partitionStartingLocation + this->_fsd->rootDirectoryICB.extLocation.logicalBlockNum;
+  is.seekg(loc * SECTOR_SIZE, is.beg);
+  is.read(this->_buffer, SECTOR_SIZE);
+  this->_rdefe = (extendedFileEntry *)&this->_buffer[0];
+
+  if (this->_rdefe->descTag.tagIdent != TAG_IDENT_EFE)
+    std::cerr << "Corrupted ExtendedFileEntry" << std::endl;
 }
 
 void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(std::istream & is)
 {
-  if (this->_parseDescriptor(is, (char *)&this->_rdfid, sizeof(this->_rdfid), TAG_IDENT_FID, this->_rdfe.descTag.tagLocation + 1))
+  uint32_t loc;
+
+  loc = this->_pd.partitionStartingLocation + this->_rdefe->informationLength;
+  is.seekg(loc * SECTOR_SIZE, is.beg);
+  is.read(this->_buffer, SECTOR_SIZE);
+  this->_rdfid = (fileIdentDesc *)this->_buffer;
+
+  if (this->_rdfid->descTag.tagIdent != TAG_IDENT_FID)
     std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
 }
