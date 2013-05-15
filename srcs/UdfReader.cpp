@@ -3,25 +3,13 @@
 
 #include "UdfReader.hh"
 
-UdfReader::UdfReader(std::istream & is)
+UdfReader::UdfReader(std::ifstream & is) :
+  _udfFile(is)
 {
   this->parse(is);
 }
 
-UdfReader::UdfReader(UdfReader const & udf)
-{
-  (*this) = udf;
-}
-
-UdfReader::UdfReader(void) { }
-
 UdfReader::~UdfReader(void) { }
-
-UdfReader & UdfReader::operator=(UdfReader const & udf)
-{
-  this->_avdp = udf._avdp;
-  return (*this);
-}
 
 void UdfReader::parse(std::istream & is)
 {
@@ -133,6 +121,7 @@ void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(std::istream & is)
 
 #include <iostream>
 #include <iomanip>
+#include <bitset>
 /*
 ** fill the structure in parameter with disk info
 */
@@ -163,5 +152,21 @@ void  UdfReader::getFDiskData(FDiskData &data)
   }
   std::cout << std::endl;
 
-  
+  // volume
+  std::cout << this->_pvd.volIdent << std::endl;
+  std::cout << this->_pvd.volSetIdent << std::endl;
+
+  // version - not working, don't know why
+  memcpy(data.identifierSuffix, &this->_pvd.impIdent.identSuffix, 8);
+  uint16_t  version = (data.identifierSuffix[0] << 8) | data.identifierSuffix[1];
+
+  //std::cout << (int)data.identifierSuffix[1] << std::endl;
+  std::cout << "Version:" << version << std::endl;
+  std::cout << this->_lvd.impIdent.identSuffix << std::endl;
+  std::cout << data.identifierSuffix << std::endl;
+
+  // space
+    _udfFile.seekg(0, std::ifstream::end);
+    std::cout << _udfFile.tellg() << std::endl; 
+
 }

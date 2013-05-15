@@ -1,6 +1,7 @@
 #ifndef __UDFREADER_H__
 # define __UDFREADER_H__
 
+#include <fstream>
 #include "AUdf.hh"
 #include "FDiskData.h"
 
@@ -14,14 +15,11 @@ class UdfReader : public AUdf
   fileEntry _rdfe;
   fileIdentDesc _rdfid;
   
+  std::ifstream & _udfFile;
 
 public:
-  UdfReader(std::istream & is);
-  UdfReader(UdfReader const & udf);
-  UdfReader(void);
+  UdfReader(std::ifstream & is);
   ~UdfReader(void);
-
-  UdfReader & operator=(UdfReader const & udf);
 
   void parse(std::istream & is);
   void toto(std::istream & is);

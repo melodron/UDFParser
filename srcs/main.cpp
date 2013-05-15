@@ -26,7 +26,7 @@ int main(int ac, char const * av[])
     std::cout << "is not UDF :(" << std::endl;
   }
 
-  is.close();
+  //is.close();
 /*  Command test;
 
   test.exec();*/
