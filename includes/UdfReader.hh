@@ -34,13 +34,13 @@ class Directory : public File
 {
 private:
   std::list<File *> _files;
-  std::list<Directory *> _directorys;
+  std::list<Directory *> _directories;
   Directory *_parent;
 
 public:
   void addFile(File *file);
   void addDirectory(Directory *directory);
-  std::list<Directory *> getDirectorys(void);
+  std::list<Directory *> getDirectories(void);
   std::list<File *> getFiles(void);
   void setParent(Directory *dir);
   Directory *getParent(void);
@@ -52,6 +52,7 @@ class UdfReader : public AUdf
   primaryVolDesc _pvd;
   partitionDesc _pd;
   logicalVolDesc _lvd;
+  logicalVolIntegrityDesc _lvid;
   fileSetDesc *_fsd;
   extendedFileEntry *_rdefe;
   fileIdentDesc *_rdfid;
@@ -65,7 +66,6 @@ public:
   ~UdfReader(void);
 
   void parse(std::istream & is);
-  void toto(std::istream & is);
   void getFDiskData(FDiskData &data);
   void chdir(std::string const & dir);
   Directory * getCurrentDirectory(void);
@@ -80,6 +80,7 @@ private:
   void _parsePrimaryVolumeDescriptor(std::istream & is);
   void _parsePartitionDescriptor(std::istream & is);
   void _parseLogicalVolumeDescriptor(std::istream & is);
+  void _parseLogicalVolumeIntegrityDescriptor(std::istream & is);
   void _parseFileSetDescriptor(std::istream & is);
   void _parseRootDirectoryExtendedFileEntry(std::istream & is);
   void _parseRootDirectoryFileIdentifierDescriptor(void);

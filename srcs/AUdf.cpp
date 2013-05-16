@@ -6,7 +6,7 @@ bool AUdf::detect(std::istream & is)
 {
   uint32_t sector;
   regid vrs;
-  char * buffer = new char [SECTOR_SIZE];
+  char buffer[SECTOR_SIZE];
   bool validUdf = false;
   bool validDesc = true;
 
@@ -28,7 +28,5 @@ bool AUdf::detect(std::istream & is)
       break;
     }
   }
-
-  delete[] buffer;
   return (validUdf && validDesc);
 }

@@ -4,6 +4,9 @@
 
 struct FDiskData
 {
-	timestamp 	*recordingDateAndTime;	
-	uint8_t		identifierSuffix[8];
+	timestamp 	*recordingDateAndTime;
+	dstring		volumeIdentifier[32];
+	uint16_t	version;
+	uint64_t	totalSpace;
+	uint64_t	freeSpace;
 };

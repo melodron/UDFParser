@@ -21,6 +21,7 @@ void UdfReader::parse(std::istream & is)
   this->_parsePrimaryVolumeDescriptor(is);
   this->_parsePartitionDescriptor(is);
   this->_parseLogicalVolumeDescriptor(is);
+  this->_parseLogicalVolumeIntegrityDescriptor(is);
   this->_parseFileSetDescriptor(is);
   this->_parseRootDirectoryExtendedFileEntry(is);
   this->_parseRootDirectoryFileIdentifierDescriptor();
@@ -99,6 +100,15 @@ void UdfReader::_parseLogicalVolumeDescriptor(std::istream & is)
   if (!this->_parseDescriptor(is, (char *)&this->_lvd, sizeof(this->_lvd), TAG_IDENT_LVD, 1))
     std::cerr << "Corrupted LogicalVolumeDescriptor" << std::endl;
 }
+
+void UdfReader::_parseLogicalVolumeIntegrityDescriptor(std::istream & is)
+{
+  is.seekg(this->_lvd.integritySeqExt.extLocation * SECTOR_SIZE, is.beg);
+  is.read((char *)&this->_lvid, sizeof(logicalVolIntegrityDesc));
+  if (this->_lvid.descTag.tagIdent != TAG_IDENT_LVID)
+      std::cerr << "Corrupted LogicalVolumeIntegrityDescriptor" << std::endl;
+}
+
 
 void UdfReader::_parseFileSetDescriptor(std::istream & is)
 {
@@ -251,7 +261,7 @@ Directory *UdfReader::getCurrentDirectory(void)
 void UdfReader::chdir(std::string const & dir)
 {
   std::string firstDir;
-  std::list<Directory *> directorys;
+  std::list<Directory *> directories;
   std::list<Directory *>::iterator it;
   int pos;
 
@@ -267,8 +277,8 @@ void UdfReader::chdir(std::string const & dir)
   } else if (firstDir == "") {
     this->_currentDirectory = this->_rootDirectory;
   } else {
-    directorys = this->_currentDirectory->getDirectorys();
-    for (it = directorys.begin(); it != directorys.end(); ++it) {
+    directories = this->_currentDirectory->getDirectories();
+    for (it = directories.begin(); it != directories.end(); ++it) {
       if (firstDir.compare((*it)->getName()) == 0) {
 	this->_currentDirectory = (*it);
 	break;
@@ -288,7 +298,7 @@ void UdfReader::listDirectory(void)
   std::list<File*>::iterator itFile;
 
   std::cout << "       ..\t<dir>\t" << std::endl;
-  dirs = this->_currentDirectory->getDirectorys();
+  dirs = this->_currentDirectory->getDirectories();
   for (itDir = dirs.begin(); itDir != dirs.end(); ++itDir) {
     std::cout << ((*itDir)->isHidden() ? "<hide> " : "       ") << (*itDir)->getName() << "\t<dir>\t" << std::endl;
   }
@@ -351,7 +361,7 @@ fileIdentDesc *File::File::getFid()
 
 void Directory::addDirectory(Directory *newDir)
 {
-  this->_directorys.push_back(newDir);
+  this->_directories.push_back(newDir);
 }
 
 void Directory::addFile(File *newFile)
@@ -369,9 +379,9 @@ Directory *Directory::getParent(void)
   return this->_parent;
 }
 
-std::list<Directory *> Directory::getDirectorys(void)
+std::list<Directory *> Directory::getDirectories(void)
 {
-  return this->_directorys;
+  return this->_directories;
 }
 
 std::list<File *> Directory::getFiles(void)
@@ -379,9 +389,6 @@ std::list<File *> Directory::getFiles(void)
   return this->_files;
 }
 
-#include <iostream>
-#include <iomanip>
-#include <bitset>
 /*
 ** fill the structure in parameter with disk info
 */
@@ -390,43 +397,23 @@ void  UdfReader::getFDiskData(FDiskData &data)
   //timezone
   data.recordingDateAndTime = &_pvd.recordingDateAndTime;
 
-  struct
-  {
-    unsigned type:4;
-    unsigned timezone:12;
-  } typeAndTimezone;
-
-  typeAndTimezone.type = data.recordingDateAndTime->typeAndTimezone >> 12;
-  typeAndTimezone.timezone = data.recordingDateAndTime->typeAndTimezone & 0b111111111;
-  std::cout << "Record Time:"
-            << data.recordingDateAndTime->year << "-"
-            << (int)data.recordingDateAndTime->month << "-"
-            << (int)data.recordingDateAndTime->day << "\t"
-            << (int)data.recordingDateAndTime->hour << ":"
-            << (int)data.recordingDateAndTime->minute << ":"
-            << std::setw(2) << std::setfill('0') << (int)data.recordingDateAndTime->second;
-  if (typeAndTimezone.timezone >= -1440 && typeAndTimezone.timezone <= 1440)
-  {
-    std::cout << " (UTC: " 
-               << std::showpos << typeAndTimezone.timezone / 60 << ")";
-  }
-  std::cout << std::endl;
-
   // volume
-  std::cout << this->_pvd.volIdent << std::endl;
-  std::cout << this->_pvd.volSetIdent << std::endl;
+  memcpy(data.volumeIdentifier, this->_pvd.volIdent, 32);
 
   // version - not working, don't know why
-  memcpy(data.identifierSuffix, &this->_pvd.impIdent.identSuffix, 8);
-  uint16_t  version = (data.identifierSuffix[0] << 8) | data.identifierSuffix[1];
-
-  //std::cout << (int)data.identifierSuffix[1] << std::endl;
-  std::cout << "Version:" << version << std::endl;
-  std::cout << this->_lvd.impIdent.identSuffix << std::endl;
-  std::cout << data.identifierSuffix << std::endl;
+  data.version = (this->_pvd.impIdent.identSuffix[0] << 8) | this->_pvd.impIdent.identSuffix[1];
 
   // space
-    _udfFile.seekg(0, std::ifstream::end);
-    std::cout << _udfFile.tellg() << std::endl; 
-
+  _udfFile.seekg(0, std::ifstream::end);
+  data.totalSpace = _udfFile.tellg(); 
+  
+  data.freeSpace = 0;
+  for (size_t i = 0; i < this->_lvid.numOfPartitions; ++i)
+  {
+    if (this->_lvid.freeSpaceTable[i] != 0xFFFFFF)
+    {
+      std::cout << "debug " << this->_lvid.freeSpaceTable[i] * SECTOR_SIZE << std::endl;
+      data.freeSpace += this->_lvid.freeSpaceTable[i] * SECTOR_SIZE;
+    }
+  }
 }
