@@ -13,15 +13,18 @@ protected:
   std::string _name;
   uint32_t _uid;
   uint32_t _gid;
+  bool _hidden;
 
 public:
   void setName(char *name, uint8_t length);
   void setUid(uint32_t uid);
   void setGid(uint32_t gid);
+  void setHidden(bool hidden);
 
   std::string const & getName(void) const;
   uint32_t getUid(void) const;
   uint32_t getGid(void) const;
+  bool isHidden(void) const;
 };
 
 class Directory : public File
@@ -29,10 +32,15 @@ class Directory : public File
 private:
   std::list<File *> _files;
   std::list<Directory *> _directorys;
+  Directory *_parent;
 
 public:
   void addFile(File *file);
   void addDirectory(Directory *directory);
+  std::list<Directory *> getDirectorys(void);
+  std::list<File *> getFiles(void);
+  void setParent(Directory *dir);
+  Directory *getParent(void);
 };
 
 class UdfReader : public AUdf
@@ -56,6 +64,9 @@ public:
   void parse(std::istream & is);
   void toto(std::istream & is);
   void getFDiskData(FDiskData &data);
+  void chdir(std::string const & dir);
+  Directory * getCurrentDirectory(void);
+  void listDirectory(void);
 
 private:
   bool _parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t  tagIdentifier, uint32_t offset);
