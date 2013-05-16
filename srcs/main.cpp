@@ -19,7 +19,7 @@ int main(int ac, char const * av[])
     FDiskData data;
 
     udf = new UdfReader(is);
-    std::cout << "is UDF"  << std::endl;
+    std::cout << "is UDF" << std::endl;
     udf->getFDiskData(data);
     delete udf;
   } else {
