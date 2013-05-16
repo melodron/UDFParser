@@ -17,6 +17,7 @@ void UdfReader::parse(std::istream & is)
   this->_parsePrimaryVolumeDescriptor(is);
   this->_parsePartitionDescriptor(is);
   this->_parseLogicalVolumeDescriptor(is);
+  this->_parseLogicalVolumeIntegrityDescriptor(is);
   this->_parseFileSetDescriptor(is);
   this->_parseRootDirectoryExtendedFileEntry(is);
   this->_parseRootDirectoryFileIdentifierDescriptor(is);
@@ -91,6 +92,15 @@ void UdfReader::_parseLogicalVolumeDescriptor(std::istream & is)
   if (!this->_parseDescriptor(is, (char *)&this->_lvd, sizeof(this->_lvd), TAG_IDENT_LVD, 1))
     std::cerr << "Corrupted LogicalVolumeDescriptor" << std::endl;
 }
+
+void UdfReader::_parseLogicalVolumeIntegrityDescriptor(std::istream & is)
+{
+  is.seekg(this->_lvd.integritySeqExt.extLocation * SECTOR_SIZE, is.beg);
+  is.read((char *)&this->_lvid, this->_lvd.integritySeqExt.extLength);
+  if (this->_lvid.descTag.tagIdent != TAG_IDENT_LVID)
+      std::cerr << "Corrupted LogicalVolumeIntegrityDescriptor" << std::endl;
+}
+
 
 void UdfReader::_parseFileSetDescriptor(std::istream & is)
 {
@@ -176,11 +186,24 @@ void  UdfReader::getFDiskData(FDiskData &data)
 
   //std::cout << (int)data.identifierSuffix[1] << std::endl;
   std::cout << "Version:" << version << std::endl;
-  std::cout << this->_lvd.impIdent.identSuffix << std::endl;
+  std::cout << "pmop" << *((uint16_t *) &this->_pvd.impIdent.identSuffix) << std::endl;
   std::cout << data.identifierSuffix << std::endl;
 
   // space
-    _udfFile.seekg(0, std::ifstream::end);
-    std::cout << _udfFile.tellg() << std::endl; 
+  _udfFile.seekg(0, std::ifstream::end);
+  std::cout << _udfFile.tellg() << std::endl; 
+  
+  std::cout << this->_lvid.numOfPartitions << std::endl;
 
+  uint64_t freespace = 0;
+  for (size_t i = 0; i < this->_lvid.numOfPartitions; ++i)
+  {
+    if (this->_lvid.freeSpaceTable[i] != 0xFFFFFF)
+    {
+      std::cout << "free " << this->_lvid.freeSpaceTable[i] * SECTOR_SIZE << std::endl;
+      freespace += this->_lvid.freeSpaceTable[i] * SECTOR_SIZE;
+    }
+  }
+  std::cout << "Freespace " << freespace << std::endl;
+  
 }

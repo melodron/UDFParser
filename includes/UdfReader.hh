@@ -11,6 +11,7 @@ class UdfReader : public AUdf
   primaryVolDesc _pvd;
   partitionDesc _pd;
   logicalVolDesc _lvd;
+  logicalVolIntegrityDesc _lvid;
   fileSetDesc *_fsd;
   extendedFileEntry *_rdefe;
   fileIdentDesc *_rdfid;
@@ -33,6 +34,7 @@ private:
   void _parsePrimaryVolumeDescriptor(std::istream & is);
   void _parsePartitionDescriptor(std::istream & is);
   void _parseLogicalVolumeDescriptor(std::istream & is);
+  void _parseLogicalVolumeIntegrityDescriptor(std::istream & is);
   void _parseFileSetDescriptor(std::istream & is);
   void _parseRootDirectoryExtendedFileEntry(std::istream & is);
   void _parseRootDirectoryFileIdentifierDescriptor(std::istream & is);
