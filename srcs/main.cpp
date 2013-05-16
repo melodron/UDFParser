@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 
 #include "UdfReader.hh"
 #include "Command.hpp"
@@ -8,30 +9,21 @@
 int main(int ac, char const * av[])
 {
   std::ifstream is;
-  UdfReader *udf;
 
   if (ac < 2)
-    return 0;
-
+    {
+      std::cerr << "Usage: ./UdfReader udf_file.iso" << std::endl;
+      return EXIT_FAILURE;
+    }
   is.open(av[1], std::ifstream::binary);
-
   if (AUdf::detect(is)) {
-    FDiskData data;
 
-    udf = new UdfReader(is);
     std::cout << "is UDF" << std::endl;
-    //udf->getFDiskData(data);
-    udf->listDirectory();
-    udf->chdir("/dir1/");
-    std::cout << udf->getCurrentDirectory()->getName() << std::endl;
-    delete udf;
-  } else {
-    std::cout << "is not UDF :(" << std::endl;
-  }
+    Command test(is);
 
-  //is.close();
-/*  Command test;
-
-  test.exec();*/
-  return 0;
+    test.exec();
+  } else
+    std::cerr << av[1] << " is not an UDF File." << std::endl;
+  is.close();
+  return EXIT_SUCCESS;
 }
