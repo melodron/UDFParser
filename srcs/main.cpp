@@ -25,9 +25,9 @@ int main(int ac, char const * av[])
     // udf->chdir("/dir2/");
     // udf->readFile("README2");
     // udf->copy("README2", "/tmp/toto");
-    Command test(is);
+    Command commandInterpreter(is);
 
-    test.exec();
+    commandInterpreter.exec();
     delete udf;
   } else
     std::cerr << av[1] << " is not an UDF File." << std::endl;
