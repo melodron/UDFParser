@@ -9,6 +9,7 @@ UdfReader::UdfReader(std::ifstream & is)
 {
   this->parse(is);
   this->_currentDirectory = this->_rootDirectory;
+  this->_rootDirectory->setParent(this->_rootDirectory);
 }
 
 // TODO : FREEEeeEEEeeeEEEeeeEEEeeeEEe
@@ -154,10 +155,10 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
   fileIdentDesc *fid;
   Directory *newDir;
   File *newFile;
-  extendedFileEntry efe;
+  extendedFileEntry *efe;
   uint32_t loc;
+  char buffer[SECTOR_SIZE];
 
-  this->_rootDirectory = new Directory();
   fid = (fileIdentDesc*)startPos;
   pos = startPos + ((((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3);
   while (pos - startPos < lengthAllocDescs) {
@@ -168,26 +169,87 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
 
     loc = this->_pd.partitionStartingLocation + fid->icb.extLocation.logicalBlockNum;
     is.seekg(loc * SECTOR_SIZE, is.beg);
-    is.read((char *)&efe, sizeof(efe));
+    is.read(buffer, SECTOR_SIZE);
+    efe = (extendedFileEntry *)buffer;
 
     if (fid->fileCharacteristics == FID_FILE_CHAR_DIRECTORY) {
       newDir = new Directory();
       parent->addDirectory(newDir);
-      // this->_parseDirectory(pos, newDir);
+      newDir->setParent(parent);
+      this->_parseDirectory(is, &efe->allocDescs[0] + efe->lengthExtendedAttr, efe->lengthAllocDescs, newDir);
       newFile = newDir;
     } else {
       newFile = new File();
       parent->addFile(newFile);
     }
 
-    newFile->setName((char*)&fid->fileIdent[0] + fid->lengthOfImpUse, fid->lengthFileIdent);
+    if (fid->fileCharacteristics == FID_FILE_CHAR_HIDDEN)
+      newFile->setHidden(true);
+
+    newFile->setName((char*)&fid->fileIdent[0] + fid->lengthOfImpUse + 1, fid->lengthFileIdent - 1);
     // newFile->setCreateTime(efe->createTime);
     // newFile->setModificationTime(efe->modificationTime);
-    newFile->setUid(efe.uid);
-    newFile->setGid(efe.gid);
+    newFile->setUid(efe->uid);
+    newFile->setGid(efe->gid);
     // newFile->setPermissions(efe->permissions);
 
     pos += (((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3;
+  }
+}
+
+Directory *UdfReader::getCurrentDirectory(void)
+{
+  return this->_currentDirectory;
+}
+
+void UdfReader::chdir(std::string const & dir)
+{
+  std::string firstDir;
+  std::list<Directory *> directorys;
+  std::list<Directory *>::iterator it;
+  int pos;
+
+  pos = dir.find('/');
+  if (pos == -1)
+    firstDir = dir;
+  else {
+    firstDir = dir.substr(0, pos);
+  }
+
+  if (firstDir == "..") {
+    this->_currentDirectory = this->_currentDirectory->getParent();
+  } else if (firstDir == "") {
+    this->_currentDirectory = this->_rootDirectory;
+  } else {
+    directorys = this->_currentDirectory->getDirectorys();
+    for (it = directorys.begin(); it != directorys.end(); ++it) {
+      if (firstDir.compare((*it)->getName()) == 0) {
+	this->_currentDirectory = (*it);
+	break;
+      }
+    }
+  }
+
+  if (pos != -1 && pos + 1 != (int)dir.size())
+    this->chdir(dir.substr(pos + 1));
+}
+
+void UdfReader::listDirectory(void)
+{
+  std::list<Directory*> dirs;
+  std::list<Directory*>::iterator itDir;
+  std::list<File*> files;
+  std::list<File*>::iterator itFile;
+
+  std::cout << "       ..\t<dir>\t" << std::endl;
+  dirs = this->_currentDirectory->getDirectorys();
+  for (itDir = dirs.begin(); itDir != dirs.end(); ++itDir) {
+    std::cout << ((*itDir)->isHidden() ? "<hide> " : "       ") << (*itDir)->getName() << "\t<dir>\t" << std::endl;
+  }
+
+  files = this->_currentDirectory->getFiles();
+  for (itFile = files.begin(); itFile != files.end(); ++itFile) {
+    std::cout << ((*itFile)->isHidden() ? "<hide> " : "       ") << (*itFile)->getName() << "\t<file>\t" << std::endl;
   }
 }
 
@@ -206,6 +268,11 @@ void File::setGid(uint32_t gid)
   this->_gid = gid;
 }
 
+void File::setHidden(bool hidden)
+{
+  this->_hidden = hidden;
+}
+
 std::string const & File::getName(void) const
 {
   return this->_name;
@@ -221,6 +288,11 @@ uint32_t File::getGid(void) const
   return this->_gid;
 }
 
+bool File::isHidden(void) const
+{
+  return this->_hidden;
+}
+
 void Directory::addDirectory(Directory *newDir)
 {
   this->_directorys.push_back(newDir);
@@ -229,6 +301,26 @@ void Directory::addDirectory(Directory *newDir)
 void Directory::addFile(File *newFile)
 {
   this->_files.push_back(newFile);
+}
+
+void Directory::setParent(Directory *parent)
+{
+  this->_parent = parent;
+}
+
+Directory *Directory::getParent(void)
+{
+  return this->_parent;
+}
+
+std::list<Directory *> Directory::getDirectorys(void)
+{
+  return this->_directorys;
+}
+
+std::list<File *> Directory::getFiles(void)
+{
+  return this->_files;
 }
 
 #include <iostream>
