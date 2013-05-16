@@ -4,8 +4,10 @@
 #include "UdfReader.hh"
 
 UdfReader::UdfReader(std::istream & is)
+  :_rootDirectory(new Directory)
 {
   this->parse(is);
+  this->_currentDirectory = this->_rootDirectory;
 }
 
 UdfReader::UdfReader(UdfReader const & udf)
@@ -15,6 +17,7 @@ UdfReader::UdfReader(UdfReader const & udf)
 
 UdfReader::UdfReader(void) { }
 
+// TODO : FREEEeeEEEeeeEEEeeeEEEeeeEEe
 UdfReader::~UdfReader(void) { }
 
 UdfReader & UdfReader::operator=(UdfReader const & udf)
@@ -31,7 +34,11 @@ void UdfReader::parse(std::istream & is)
   this->_parseLogicalVolumeDescriptor(is);
   this->_parseFileSetDescriptor(is);
   this->_parseRootDirectoryExtendedFileEntry(is);
-  this->_parseRootDirectoryFileIdentifierDescriptor(is);
+  this->_parseRootDirectoryFileIdentifierDescriptor();
+  this->_parseDirectory(is, 
+			&this->_rdefe->allocDescs[0] + this->_rdefe->lengthExtendedAttr,
+			this->_rdefe->lengthAllocDescs,
+			this->_rootDirectory);
 }
 
 // TODO: refactor
@@ -132,15 +139,96 @@ void UdfReader::_parseRootDirectoryExtendedFileEntry(std::istream & is)
     std::cerr << "Corrupted ExtendedFileEntry" << std::endl;
 }
 
-void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(std::istream & is)
+void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(void)
 {
-  uint32_t loc;
+  uint8_t *pos;
 
-  loc = this->_pd.partitionStartingLocation + this->_rdefe->informationLength;
-  is.seekg(loc * SECTOR_SIZE, is.beg);
-  is.read(this->_buffer, SECTOR_SIZE);
-  this->_rdfid = (fileIdentDesc *)this->_buffer;
+  pos = &this->_rdefe->allocDescs[0] + this->_rdefe->lengthExtendedAttr;
+  this->_rdfid = (fileIdentDesc *)pos;
 
   if (this->_rdfid->descTag.tagIdent != TAG_IDENT_FID)
-    std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
+      std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
+}
+
+void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t lengthAllocDescs, Directory *parent)
+{
+  uint8_t *pos;
+  fileIdentDesc *fid;
+  Directory *newDir;
+  File *newFile;
+  extendedFileEntry efe;
+  uint32_t loc;
+
+  this->_rootDirectory = new Directory();
+  fid = (fileIdentDesc*)startPos;
+  pos = startPos + ((((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3);
+  while (pos - startPos < lengthAllocDescs) {
+    fid = (fileIdentDesc *)pos;
+
+    if (fid->descTag.tagIdent != TAG_IDENT_FID)
+      std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
+
+    loc = this->_pd.partitionStartingLocation + fid->icb.extLocation.logicalBlockNum;
+    is.seekg(loc * SECTOR_SIZE, is.beg);
+    is.read((char *)&efe, sizeof(efe));
+
+    if (fid->fileCharacteristics == FID_FILE_CHAR_DIRECTORY) {
+      newDir = new Directory();
+      parent->addDirectory(newDir);
+      // this->_parseDirectory(pos, newDir);
+      newFile = newDir;
+    } else {
+      newFile = new File();
+      parent->addFile(newFile);
+    }
+
+    newFile->setName((char*)&fid->fileIdent[0] + fid->lengthOfImpUse, fid->lengthFileIdent);
+    // newFile->setCreateTime(efe->createTime);
+    // newFile->setModificationTime(efe->modificationTime);
+    newFile->setUid(efe.uid);
+    newFile->setGid(efe.gid);
+    // newFile->setPermissions(efe->permissions);
+
+    pos += (((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3;
+  }
+}
+
+void File::setName(char *name, uint8_t length)
+{
+  this->_name.append(name, length);
+}
+
+void File::setUid(uint32_t uid)
+{
+  this->_uid = uid;
+}
+
+void File::setGid(uint32_t gid)
+{
+  this->_gid = gid;
+}
+
+std::string const & File::getName(void) const
+{
+  return this->_name;
+}
+
+uint32_t File::getUid(void) const
+{
+  return this->_uid;
+}
+
+uint32_t File::getGid(void) const
+{
+  return this->_gid;
+}
+
+void Directory::addDirectory(Directory *newDir)
+{
+  this->_directorys.push_back(newDir);
+}
+
+void Directory::addFile(File *newFile)
+{
+  this->_files.push_back(newFile);
 }

@@ -1,7 +1,37 @@
 #ifndef __UDFREADER_H__
 # define __UDFREADER_H__
 
+#include <list>
+
 #include "AUdf.hh"
+
+class File
+{
+protected:
+  std::string _name;
+  uint32_t _uid;
+  uint32_t _gid;
+
+public:
+  void setName(char *name, uint8_t length);
+  void setUid(uint32_t uid);
+  void setGid(uint32_t gid);
+
+  std::string const & getName(void) const;
+  uint32_t getUid(void) const;
+  uint32_t getGid(void) const;
+};
+
+class Directory : public File
+{
+private:
+  std::list<File *> _files;
+  std::list<Directory *> _directorys;
+
+public:
+  void addFile(File *file);
+  void addDirectory(Directory *directory);
+};
 
 class UdfReader : public AUdf
 {
@@ -13,7 +43,8 @@ class UdfReader : public AUdf
   extendedFileEntry *_rdefe;
   fileIdentDesc *_rdfid;
   char _buffer[SECTOR_SIZE];
-  
+  Directory *_rootDirectory;
+  Directory *_currentDirectory;
 
 public:
   UdfReader(std::istream & is);
@@ -35,7 +66,8 @@ private:
   void _parseLogicalVolumeDescriptor(std::istream & is);
   void _parseFileSetDescriptor(std::istream & is);
   void _parseRootDirectoryExtendedFileEntry(std::istream & is);
-  void _parseRootDirectoryFileIdentifierDescriptor(std::istream & is);
+  void _parseRootDirectoryFileIdentifierDescriptor(void);
+  void _parseDirectory(std::istream & is, uint8_t *startPos, uint32_t length, Directory *parent);
 };
 
 #endif /* !__UDFREADER_H__ */
