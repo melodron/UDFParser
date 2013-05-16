@@ -21,9 +21,9 @@ int main(int ac, char const * av[])
     udf = new UdfReader(is);
     std::cout << "is UDF" << std::endl;
     //udf->getFDiskData(data);
-    udf->listDirectory();
-    udf->chdir("/dir1/");
-    std::cout << udf->getCurrentDirectory()->getName() << std::endl;
+    udf->chdir("/dir2/");
+    udf->readFile("README2");
+    udf->copy("README2", "/tmp/toto");
     delete udf;
   } else {
     std::cout << "is not UDF :(" << std::endl;

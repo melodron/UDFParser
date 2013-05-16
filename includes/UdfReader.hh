@@ -14,17 +14,20 @@ protected:
   uint32_t _uid;
   uint32_t _gid;
   bool _hidden;
+  fileIdentDesc *_fid;
 
 public:
   void setName(char *name, uint8_t length);
   void setUid(uint32_t uid);
   void setGid(uint32_t gid);
   void setHidden(bool hidden);
+  void setFid(fileIdentDesc *fid);
 
   std::string const & getName(void) const;
   uint32_t getUid(void) const;
   uint32_t getGid(void) const;
   bool isHidden(void) const;
+  fileIdentDesc *getFid(void);
 };
 
 class Directory : public File
@@ -67,6 +70,8 @@ public:
   void chdir(std::string const & dir);
   Directory * getCurrentDirectory(void);
   void listDirectory(void);
+  void readFile(std::string const & filename);
+  void copy(std::string const & filename, std::string const & to);
 
 private:
   bool _parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t  tagIdentifier, uint32_t offset);

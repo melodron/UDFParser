@@ -123,6 +123,12 @@ void UdfReader::_parseRootDirectoryExtendedFileEntry(std::istream & is)
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(this->_buffer, SECTOR_SIZE);
   this->_rdefe = (extendedFileEntry *)&this->_buffer[0];
+  // this->_rootDirectory->setCreateTime(this->_rdefe->createTime);
+  // this->_rootDirectory->setModificationTime(this->_rdefe->modificationTime);
+  this->_rootDirectory->setUid(this->_rdefe->uid);
+  this->_rootDirectory->setGid(this->_rdefe->gid);
+  // this->_rootDirectory->setPermissions(this->_rdefe->permissions);
+
 
   if (this->_rdefe->descTag.tagIdent != TAG_IDENT_EFE)
     std::cerr << "Corrupted ExtendedFileEntry" << std::endl;
@@ -134,6 +140,7 @@ void UdfReader::_parseRootDirectoryFileIdentifierDescriptor(void)
 
   pos = &this->_rdefe->allocDescs[0] + this->_rdefe->lengthExtendedAttr;
   this->_rdfid = (fileIdentDesc *)pos;
+  this->_rootDirectory->setFid(this->_rdfid);
 
   if (this->_rdfid->descTag.tagIdent != TAG_IDENT_FID)
       std::cerr << "Corrupted FileIdentifierDescriptor" << std::endl;
@@ -148,6 +155,7 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
   extendedFileEntry *efe;
   uint32_t loc;
   char buffer[SECTOR_SIZE];
+  char *allocedFid;
 
   fid = (fileIdentDesc*)startPos;
   pos = startPos + ((((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3);
@@ -161,7 +169,7 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
     is.seekg(loc * SECTOR_SIZE, is.beg);
     is.read(buffer, SECTOR_SIZE);
     efe = (extendedFileEntry *)buffer;
-
+    
     if (fid->fileCharacteristics == FID_FILE_CHAR_DIRECTORY) {
       newDir = new Directory();
       parent->addDirectory(newDir);
@@ -176,6 +184,9 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
     if (fid->fileCharacteristics == FID_FILE_CHAR_HIDDEN)
       newFile->setHidden(true);
 
+    allocedFid = new char [sizeof(*fid) + fid->lengthOfImpUse + fid->lengthFileIdent];
+    memcpy(allocedFid, fid, sizeof(*fid) + fid->lengthOfImpUse + fid->lengthFileIdent);
+    newFile->setFid((fileIdentDesc*)&allocedFid[0]);
     newFile->setName((char*)&fid->fileIdent[0] + fid->lengthOfImpUse + 1, fid->lengthFileIdent - 1);
     // newFile->setCreateTime(efe->createTime);
     // newFile->setModificationTime(efe->modificationTime);
@@ -184,6 +195,51 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
     // newFile->setPermissions(efe->permissions);
 
     pos += (((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3;
+  }
+}
+
+void UdfReader::copy(std::string const & filename, std::string const & to)
+{
+  std::list<File *> files;
+  std::list<File *>::iterator it;
+  fileIdentDesc *fid;
+  extendedFileEntry *efe;
+  char buffer[SECTOR_SIZE];
+  std::ofstream fileTo;
+
+  fileTo.open(to.c_str(), std::ofstream::out | std::ofstream::binary);
+  files = this->_currentDirectory->getFiles();
+  for (it = files.begin(); it != files.end(); ++it) {
+    if (filename == (*it)->getName()) {
+      fid = (*it)->getFid();
+      this->_udfFile.seekg((this->_pd.partitionStartingLocation + fid->icb.extLocation.logicalBlockNum) * SECTOR_SIZE, this->_udfFile.beg);
+      this->_udfFile.read(buffer, SECTOR_SIZE);
+      efe = (extendedFileEntry*)&buffer[0];
+      fileTo << (char*)&efe->extendedAttr[0];
+      break ;
+    }
+  }
+  fileTo.close();
+}
+
+void UdfReader::readFile(std::string const & filename)
+{
+  std::list<File *> files;
+  std::list<File *>::iterator it;
+  fileIdentDesc *fid;
+  extendedFileEntry *efe;
+  char buffer[SECTOR_SIZE];
+
+  files = this->_currentDirectory->getFiles();
+  for (it = files.begin(); it != files.end(); ++it) {
+    if (filename == (*it)->getName()) {
+      fid = (*it)->getFid();
+      this->_udfFile.seekg((this->_pd.partitionStartingLocation + fid->icb.extLocation.logicalBlockNum) * SECTOR_SIZE, this->_udfFile.beg);
+      this->_udfFile.read(buffer, SECTOR_SIZE);
+      efe = (extendedFileEntry*)&buffer[0];
+      std::cout << (char*)&efe->extendedAttr[0];
+      return ;
+    }
   }
 }
 
@@ -281,6 +337,16 @@ uint32_t File::getGid(void) const
 bool File::isHidden(void) const
 {
   return this->_hidden;
+}
+
+void File::setFid(fileIdentDesc *fid)
+{
+  this->_fid = fid;
+}
+
+fileIdentDesc *File::File::getFid()
+{
+  return this->_fid;
 }
 
 void Directory::addDirectory(Directory *newDir)
