@@ -127,11 +127,11 @@ void UdfReader::_parseRootDirectoryExtendedFileEntry(std::istream & is)
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(this->_buffer, SECTOR_SIZE);
   this->_rdefe = (extendedFileEntry *)&this->_buffer[0];
-  this->_rootDirectory->setCreateTime(this->_rdefe->createTime);
-  this->_rootDirectory->setModificationTime(this->_rdefe->modificationTime);
+  // this->_rootDirectory->setCreateTime(this->_rdefe->createTime);
+  // this->_rootDirectory->setModificationTime(this->_rdefe->modificationTime);
   this->_rootDirectory->setUid(this->_rdefe->uid);
   this->_rootDirectory->setGid(this->_rdefe->gid);
-  this->_rootDirectory->setPermissions(this->_rdefe->permissions);
+  // this->_rootDirectory->setPermissions(this->_rdefe->permissions);
 
 
   if (this->_rdefe->descTag.tagIdent != TAG_IDENT_EFE)
@@ -192,11 +192,11 @@ void UdfReader::_parseDirectory(std::istream & is, uint8_t *startPos, uint32_t l
     memcpy(allocedFid, fid, sizeof(*fid) + fid->lengthOfImpUse + fid->lengthFileIdent);
     newFile->setFid((fileIdentDesc*)&allocedFid[0]);
     newFile->setName((char*)&fid->fileIdent[0] + fid->lengthOfImpUse + 1, fid->lengthFileIdent - 1);
-    newFile->setCreateTime(efe->createTime);
-    newFile->setModificationTime(efe->modificationTime);
+    // newFile->setCreateTime(efe->createTime);
+    // newFile->setModificationTime(efe->modificationTime);
     newFile->setUid(efe->uid);
     newFile->setGid(efe->gid);
-    newFile->setPermissions(efe->permissions);
+    // newFile->setPermissions(efe->permissions);
 
     pos += (((sizeof(*fid)) + fid->lengthOfImpUse + fid->lengthFileIdent) + 3) & ~3;
   }
@@ -291,33 +291,15 @@ void UdfReader::listDirectory(void)
   std::list<File*> files;
   std::list<File*>::iterator itFile;
 
-  std::cout << "       ..\t<dir>\t";
-  std::cout << this->_currentDirectory->getCreationTime().year << "-"
-	    << (int)this->_currentDirectory->getCreationTime().month << "-"
-	    << (int)this->_currentDirectory->getCreationTime().day << " "
-	    << (int)this->_currentDirectory->getCreationTime().hour << ":"
-	    << (int)this->_currentDirectory->getCreationTime().minute << ":"
-	    << (int)this->_currentDirectory->getCreationTime().second << std::endl;
+  std::cout << "       ..\t<dir>\t" << std::endl;
   dirs = this->_currentDirectory->getDirectories();
   for (itDir = dirs.begin(); itDir != dirs.end(); ++itDir) {
-    std::cout << ((*itDir)->isHidden() ? "<hide> " : "       ") << (*itDir)->getName() << "\t<dir>\t";
-  std::cout << (*itDir)->getCreationTime().year << "-"
-	    << (int)(*itDir)->getCreationTime().month << "-"
-	    << (int)(*itDir)->getCreationTime().day << " "
-	    << (int)(*itDir)->getCreationTime().hour << ":"
-	    << (int)(*itDir)->getCreationTime().minute << ":"
-	    << (int)(*itDir)->getCreationTime().second << std::endl;
+    std::cout << ((*itDir)->isHidden() ? "<hide> " : "       ") << (*itDir)->getName() << "\t<dir>\t" << std::endl;
   }
 
   files = this->_currentDirectory->getFiles();
   for (itFile = files.begin(); itFile != files.end(); ++itFile) {
-    std::cout << ((*itFile)->isHidden() ? "<hide> " : "       ") << (*itFile)->getName() << "\t<file>\t";
-  std::cout << (*itFile)->getCreationTime().year << "-"
-	    << (int)(*itFile)->getCreationTime().month << "-"
-	    << (int)(*itFile)->getCreationTime().day << " "
-	    << (int)(*itFile)->getCreationTime().hour << ":"
-	    << (int)(*itFile)->getCreationTime().minute << ":"
-	    << (int)(*itFile)->getCreationTime().second << std::endl;
+    std::cout << ((*itFile)->isHidden() ? "<hide> " : "       ") << (*itFile)->getName() << "\t<file>\t" << std::endl;
   }
 }
 
@@ -334,36 +316,6 @@ void File::setUid(uint32_t uid)
 void File::setGid(uint32_t gid)
 {
   this->_gid = gid;
-}
-
-void File::setPermissions(int permissions)
-{
-  this->_permissions = permissions;
-}
-
-int File::getPermissions(void) const
-{
-  return this->_permissions;
-}
-
-void File::setCreateTime(timestamp time)
-{
-  this->_createTime = time;
-}
-
-void File::setModificationTime(timestamp time)
-{
-  this->_modificationTime = time;
-}
-
-timestamp const & File::getCreationTime(void) const
-{
-  return this->_createTime;
-}
-
-timestamp const & File::getModificationTime(void) const
-{
-  return this->_modificationTime;
 }
 
 void File::setHidden(bool hidden)
@@ -449,13 +401,20 @@ void  UdfReader::getFDiskData(FDiskData &data)
   _udfFile.seekg(0, std::ifstream::end);
   data.totalSpace = _udfFile.tellg(); 
   
+  //data.totalSpace = 0; 
   data.freeSpace = 0;
+  /*std::cout << "nbPartitions " << this->_lvid.numOfPartitions << std::endl;
   for (size_t i = 0; i < this->_lvid.numOfPartitions; ++i)
   {
     if (this->_lvid.freeSpaceTable[i] != 0xFFFFFF)
     {
-      std::cout << "debug " << this->_lvid.freeSpaceTable[i] * SECTOR_SIZE << std::endl;
+      std::cout << "debug free " << this->_lvid.freeSpaceTable[i] * SECTOR_SIZE << std::endl;
       data.freeSpace += this->_lvid.freeSpaceTable[i] * SECTOR_SIZE;
+    }  
+    if (this->_lvid.sizeTable[i] != 0xFFFFFF)
+    {
+      std::cout << "debug total " << this->_lvid.sizeTable[i] * SECTOR_SIZE << std::endl;
+      data.totalSpace += this->_lvid.sizeTable[i] * SECTOR_SIZE;
     }
-  }
+  }*/
 }

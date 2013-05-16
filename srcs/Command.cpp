@@ -3,6 +3,7 @@
 #include <iterator>
 #include <stdlib.h>
 #include <iomanip>
+#include <math.h>
 #include "Command.hpp"
 
 Command::Command(std::ifstream &udfFile) :
@@ -92,32 +93,34 @@ void	Command::fdisk(std::vector<std::string> &/*command*/)
 
 	typeAndTimezone.type = fdiskData_.recordingDateAndTime->typeAndTimezone >> 12;
 	typeAndTimezone.timezone = fdiskData_.recordingDateAndTime->typeAndTimezone & 0b111111111;
-	std::cout << "Record Time:"
+	std::cout << "Record Time: "
 	          << fdiskData_.recordingDateAndTime->year << "-"
 	          << (int)fdiskData_.recordingDateAndTime->month << "-"
 	          << (int)fdiskData_.recordingDateAndTime->day << "\t"
 	          << (int)fdiskData_.recordingDateAndTime->hour << ":"
-	          << (int)fdiskData_.recordingDateAndTime->minute << ":"
-	          << std::setw(2) << std::setfill('0') << (int)fdiskData_.recordingDateAndTime->second;
+	          << (int)fdiskData_.recordingDateAndTime->minute << ":";
+	std::cout.width(2);
+	std::cout.fill('0');
+	std::cout << (int)fdiskData_.recordingDateAndTime->second;
 	if (typeAndTimezone.timezone >= -1440 && typeAndTimezone.timezone <= 1440)
 	{
 		std::cout << " (UTC: " 
 	              << std::showpos << typeAndTimezone.timezone / 60 << ")";
 	}
-	std::cout << std::resetiosflags(std::ios::showpos) << std::endl;
+	std::cout << std::noshowpos << std::endl;
 
 	// version
-	double version = (double) fdiskData_.version / 1000.0;
-	std::cout << "UDF " << std::setprecision(2) << (double) fdiskData_.version / 1000.0 << " " << version << std::endl;
-
+	std::cout << "UDF " << std::fixed << std::setprecision(2)
+			  << floor(fdiskData_.version / 10) / 100 << std::endl;
+	
 	// space
 	std::cout << "Disk size: " << fdiskData_.totalSpace << std::endl;
-	std::cout << "Freespace: " << fdiskData_.freeSpace << std::endl;
+	std::cout << "Disk free size: " << fdiskData_.freeSpace << std::endl;
 }
 
 void	Command::exit(std::vector<std::string> &/*command*/)
 {
-	::exit(EXIT_SUCCESS);
+	run_ = false;
 }
 
 void	Command::cd(std::vector<std::string> &command)
