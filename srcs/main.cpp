@@ -20,7 +20,7 @@ int main(int ac, char const * av[])
   if (AUdf::detect(is)) {
     udf = new UdfReader(is);
 
-    std::cout << "is UDF" << std::endl;
+    //std::cout << "is UDF" << std::endl;
     // udf->getFDiskData(data);
     // udf->chdir("/dir2/");
     // udf->readFile("README2");

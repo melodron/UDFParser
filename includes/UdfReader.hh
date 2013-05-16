@@ -15,6 +15,9 @@ protected:
   uint32_t _gid;
   bool _hidden;
   fileIdentDesc *_fid;
+  timestamp _createTime;
+  timestamp _modificationTime;
+  int _permissions;
 
 public:
   void setName(char *name, uint8_t length);
@@ -22,8 +25,14 @@ public:
   void setGid(uint32_t gid);
   void setHidden(bool hidden);
   void setFid(fileIdentDesc *fid);
+  void setCreateTime(timestamp time);
+  void setModificationTime(timestamp time);
+  void setPermissions(int permissions);
 
   std::string const & getName(void) const;
+  int getPermissions(void) const;
+  timestamp const & getCreationTime(void) const;
+  timestamp const & getModificationTime(void) const;
   uint32_t getUid(void) const;
   uint32_t getGid(void) const;
   bool isHidden(void) const;
