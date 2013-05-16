@@ -21,7 +21,7 @@ void	Command::exec()
 
 	while (run_ && std::cin.good())
 	{
-		std::cout << ">"; // TODO: pwd
+		std::cout << ":/" << udfReader_.getCurrentDirectory()->getName() << ">";
 		std::getline(std::cin, input);
 		runCommand(input);
 	}
