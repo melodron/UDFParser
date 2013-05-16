@@ -9,6 +9,7 @@
 int main(int ac, char const * av[])
 {
   std::ifstream is;
+  UdfReader *udf;
 
   if (ac < 2)
     {
@@ -17,11 +18,17 @@ int main(int ac, char const * av[])
     }
   is.open(av[1], std::ifstream::binary);
   if (AUdf::detect(is)) {
+    udf = new UdfReader(is);
 
     std::cout << "is UDF" << std::endl;
+    // udf->getFDiskData(data);
+    // udf->chdir("/dir2/");
+    // udf->readFile("README2");
+    // udf->copy("README2", "/tmp/toto");
     Command test(is);
 
     test.exec();
+    delete udf;
   } else
     std::cerr << av[1] << " is not an UDF File." << std::endl;
   is.close();
