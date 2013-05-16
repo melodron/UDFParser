@@ -25,7 +25,7 @@ private:
 	void	cp(std::vector<std::string> &command);
 
 private:
-	bool	run_;
-	FDiskData fdiskData_;
+	bool		run_;
+	FDiskData 	fdiskData_;
 	UdfReader	udfReader_;
 };

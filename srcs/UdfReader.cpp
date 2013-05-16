@@ -35,7 +35,7 @@ void UdfReader::parse(std::istream & is)
 bool UdfReader::_parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t tagIdentifier, uint32_t offset)
 {
   uint32_t loc;
-  char *reserveDesc;
+  char reserveDesc[size];
   tag *tagId;
 
   loc = this->_avdp.mainVolDescSeqExt.extLocation + offset;
@@ -48,24 +48,18 @@ bool UdfReader::_parseDescriptor(std::istream & is, char *desc, long unsigned in
     return false;
 
   // integrity check with reserve
-  reserveDesc = new char [size];
   loc = this->_avdp.reserveVolDescSeqExt.extLocation + offset;
   is.seekg(loc * SECTOR_SIZE, is.beg);
   is.read(reserveDesc, size);
 
   tagId = (tag *)reserveDesc;
   if (tagId->tagIdent != tagIdentifier
-      || tagId->tagLocation != loc) {
-    delete [] reserveDesc;
+      || tagId->tagLocation != loc)
     return false;
-  }
 
-  if (memcmp(desc + sizeof(*tagId), reserveDesc + sizeof(*tagId), size - sizeof(*tagId)) != 0) {
-    delete [] reserveDesc;
+  if (memcmp(desc + sizeof(*tagId), reserveDesc + sizeof(*tagId), size - sizeof(*tagId)) != 0)
     return false;
-  }
 
-  delete [] reserveDesc;
   return true;
 }
 
