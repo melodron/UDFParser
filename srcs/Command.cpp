@@ -8,11 +8,7 @@
 Command::Command(std::ifstream &udfFile) :
 	run_(true), udfReader_(udfFile)
 {
-	//TODO: fill FDiskData by calling the appropriate function in UDFReader
-	udfReader_.listDirectory();
-    udfReader_.chdir("/dir1/");
-    std::cout << udfReader_.getCurrentDirectory()->getName() << std::endl;
-    udfReader_.getFDiskData(fdiskData_);
+   udfReader_.getFDiskData(fdiskData_);
 }
 
 void	Command::exec()
@@ -21,7 +17,7 @@ void	Command::exec()
 
 	while (run_ && std::cin.good())
 	{
-		std::cout << ">"; // TODO: pwd
+		std::cout << ":/" << udfReader_.getCurrentDirectory()->getName() << ">";
 		std::getline(std::cin, input);
 		runCommand(input);
 	}
@@ -150,6 +146,9 @@ void	Command::dir(std::vector<std::string> &command)
 	
 void	Command::cp(std::vector<std::string> &command)
 {
-
+	if (command.size() != 3)
+		std::cout << "Usage: cp src dest" << std::endl;	
+	else
+		udfReader_.copy(command[1], command[2]);
 }
 
