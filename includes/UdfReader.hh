@@ -2,8 +2,10 @@
 # define __UDFREADER_H__
 
 #include <list>
+#include <fstream>
 
 #include "AUdf.hh"
+#include "FDiskData.h"
 
 class File
 {
@@ -45,17 +47,15 @@ class UdfReader : public AUdf
   char _buffer[SECTOR_SIZE];
   Directory *_rootDirectory;
   Directory *_currentDirectory;
+  std::ifstream & _udfFile;
 
 public:
-  UdfReader(std::istream & is);
-  UdfReader(UdfReader const & udf);
-  UdfReader(void);
+  UdfReader(std::ifstream & is);
   ~UdfReader(void);
-
-  UdfReader & operator=(UdfReader const & udf);
 
   void parse(std::istream & is);
   void toto(std::istream & is);
+  void getFDiskData(FDiskData &data);
 
 private:
   bool _parseDescriptor(std::istream & is, char *desc, long unsigned int size, uint16_t  tagIdentifier, uint32_t offset);

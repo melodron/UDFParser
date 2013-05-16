@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "FDiskData.h"
+
 class Command
 {
 public:
@@ -15,8 +17,11 @@ private:
 
 	// commands
 
+	void	exit(std::vector<std::string> &command);
+	void	fdisk(std::vector<std::string> &command);
 	void	help(std::vector<std::string> &command);
 
 private:
 	bool	run_;
+	FDiskData data_;
 };

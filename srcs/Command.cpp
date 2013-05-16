@@ -1,11 +1,14 @@
 #include <iostream>
 #include <sstream>
 #include <iterator>
+#include <stdlib.h>
 #include "Command.hpp"
 
 Command::Command() :
 	run_(true)
-{}
+{
+	//TODO: fill FDiskData by calling the appropriate function in UDFReader
+}
 
 void	Command::exec()
 {
@@ -27,6 +30,8 @@ void	Command::runCommand(std::string const &input)
 		void (Command::*ptr)(std::vector<std::string>&);
 	}	commands[]	 =
 		{
+			{"exit", &Command::exit},
+			{"fdisk", &Command::fdisk},
 			{"help", &Command::help}
 		};
 
@@ -67,4 +72,13 @@ void	Command::help(std::vector<std::string> &/*command*/)
 			  << "fdisk: show disk information" << std::endl
 			  << "cp: copy files" << std::endl
 			  << "exit: quit program" << std::endl;
+}
+
+void	Command::fdisk(std::vector<std::string> &/*command*/)
+{
+}
+
+void	Command::exit(std::vector<std::string> &/*command*/)
+{
+	::exit(EXIT_SUCCESS);
 }
