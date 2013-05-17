@@ -32,7 +32,8 @@ void	Command::runCommand(std::string const &input)
 		void (Command::*ptr)(std::vector<std::string>&);
 	}	commands[]	 =
 		{
-			{"cd", &Command::cd},
+			{"cat", &Command::cat},
+			{"cd", &Command::cd},			
 			{"cp", &Command::cp},
 			{"dir", &Command::dir},
 			{"exit", &Command::exit},
@@ -67,6 +68,14 @@ void	Command::splitCommand(std::string const &input, std::vector<std::string> &t
 	std::copy(std::istream_iterator<std::string>(iss),
          std::istream_iterator<std::string>(),
          std::back_inserter<std::vector<std::string> >(tokens));	
+}
+
+void	Command::cat(std::vector<std::string> &command)
+{
+  if (command.size() == 2)
+    udfReader_.readFile(command[1]);
+  else
+    std::cout << "Usage: cat file" << std::endl;
 }
 
 void	Command::help(std::vector<std::string> &/*command*/)

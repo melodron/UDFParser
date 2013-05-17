@@ -23,6 +23,7 @@ private:
 	void	cd(std::vector<std::string> &command);
 	void	dir(std::vector<std::string> &command);
 	void	cp(std::vector<std::string> &command);
+	void	cat(std::vector<std::string> &command);	
 
 private:
 	bool		run_;

@@ -25,8 +25,8 @@ public:
   void setGid(uint32_t gid);
   void setHidden(bool hidden);
   void setFid(fileIdentDesc *fid);
-  void setCreateTime(timestamp time);
-  void setModificationTime(timestamp time);
+  void setCreateTime(timestamp const & time);
+  void setModificationTime(timestamp const & time);
   void setPermissions(int permissions);
 
   std::string const & getName(void) const;
@@ -61,7 +61,7 @@ class UdfReader : public AUdf
   primaryVolDesc _pvd;
   partitionDesc _pd;
   logicalVolDesc _lvd;
-  logicalVolIntegrityDesc _lvid;
+  logicalVolIntegrityDesc *_lvid;
   fileSetDesc *_fsd;
   extendedFileEntry *_rdefe;
   fileIdentDesc *_rdfid;
